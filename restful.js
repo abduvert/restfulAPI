@@ -62,12 +62,14 @@ function findProductById(id) {
 
 // Function to generate a new product ID
 function generateProductId() {
-    let id = Math.random().toString(36).substring(2, 8);
-    while (products.find(product => product.id === id)) {
-        id = Math.random().toString(36).substring(2, 8);
+    const id = (products.length + 1).toString().padStart(3, '0');
+    if (products.find(product => product.id === id)) {
+        // If the generated ID already exists, recursively call the function to generate a new one
+        return generateProductId();
     }
     return id;
 }
+
 
 // Get all products
 app.get("/products", function (req, res) {
@@ -80,11 +82,11 @@ app.get("/products/:id", function (req, res) {
     if (product) {
         res.json(product);
     } else {
-        res.status(404).send("Product not found");
+        res.status(404).json({ error: "Product not found" });
     }
 });
 
-
+// Create a new product
 app.post("/products", function (req, res) {
     const { product, company } = req.body;
     const id = generateProductId();
@@ -93,20 +95,22 @@ app.post("/products", function (req, res) {
     res.status(201).json(newProduct);
 });
 
-
+// Update a product by ID
 app.put("/products/:id", function (req, res) {
     const id = req.params.id;
     const { product, company } = req.body;
     const index = products.findIndex(p => p.id === id);
+    
     if (index !== -1) {
-        products[index].product = product || products[index].product;
-        products[index].company = company || products[index].company;
+        if (product) products[index].product = product;
+        if (company) products[index].company = company;
         res.json(products[index]);
     } else {
-        res.status(404).send("Product not found");
+        res.status(404).json({ error: "Product not found" });
     }
 });
 
+// Delete a product by ID
 app.delete("/products/:id", function (req, res) {
     const id = req.params.id;
     const index = products.findIndex(p => p.id === id);
@@ -114,11 +118,10 @@ app.delete("/products/:id", function (req, res) {
         products.splice(index, 1);
         res.status(204).end();
     } else {
-        res.status(404).send("Product not found");
+        res.status(404).json({ error: "Product not found" });
     }
 });
 
-
-app.listen(4000, function () {
+app.listen(5000, function () {
     console.log("Server is running on port 4000");
 });
